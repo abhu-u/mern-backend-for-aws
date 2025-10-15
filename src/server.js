@@ -20,7 +20,7 @@ const server = http.createServer(app);
 const allowedOrigins = [
   'http://localhost:8080', // local dev
   'https://main.d1w22wqc58f8xv.amplifyapp.com', // your Amplify frontend
-  'https://thin-desktop-having-mission.trycloudflare.com' // Cloudflare tunnel
+  'https://testament-societies-plus-trader.trycloudflare.com' // Cloudflare tunnel
 ];
 
 // Socket.io setup with CORS
