@@ -16,12 +16,16 @@ const app = express();
 const server = http.createServer(app);
 
 // Get frontend URL from environment variable
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:8080';
+const allowedOrigins = [
+  'http://localhost:8080', // local dev
+  'https://main.d1w22wqc58f8xv.amplifyapp.com', // your Amplify frontend
+  'https://sphere-yeast-patient-finite.trycloudflare.com' // Cloudflare tunnel
+];
 
 // Socket.io setup with CORS
 const io = new Server(server, {
   cors: {
-    origin: FRONTEND_URL,
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -32,9 +36,17 @@ app.set('io', io);
 
 // Middlewares
 app.use(cors({
-  origin: FRONTEND_URL,
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log("Blocked by CORS:", origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
+
 app.use(express.json());
 
 app.use('/src/uploads', express.static(path.join(__dirname, 'uploads')));
