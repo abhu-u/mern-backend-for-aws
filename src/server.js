@@ -4,7 +4,9 @@ const cors = require("cors");
 const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
+
 
 const authRoutes = require("./routes/auth");
 const sectionRoutes = require("./routes/section");
