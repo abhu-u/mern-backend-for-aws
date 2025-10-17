@@ -1,11 +1,10 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
-const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
-
+require('dotenv').config();
 
 const authRoutes = require("./routes/auth");
 const sectionRoutes = require("./routes/section");
@@ -17,16 +16,45 @@ const app = express();
 const server = http.createServer(app);
 
 // Get frontend URL from environment variable
-const allowedOrigins = [
-  'http://localhost:8080', // local dev
-  'https://main.d1w22wqc58f8xv.amplifyapp.com', // your Amplify frontend
-  'https://testament-societies-plus-trader.trycloudflare.com' // Cloudflare tunnel
-];
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:8080';
 
-// Socket.io setup with CORS
+// Dynamic CORS configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow trycloudflare.com subdomains
+    if (origin.endsWith('.trycloudflare.com')) {
+      return callback(null, true);
+    }
+    
+    // Allow configured frontend URL
+    if (origin === FRONTEND_URL) {
+      return callback(null, true);
+    }
+    
+    // Allow localhost in development
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+};
+
+// Socket.io setup with dynamic CORS
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (origin.endsWith('.trycloudflare.com')) return callback(null, true);
+      if (origin === FRONTEND_URL) return callback(null, true);
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) return callback(null, true);
+      callback(new Error('Not allowed by CORS'));
+    },
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -36,18 +64,7 @@ const io = new Server(server, {
 app.set('io', io);
 
 // Middlewares
-app.use(cors({
-  origin: function(origin, callback){
-    if(!origin) return callback(null, true); // allow non-browser requests like Postman
-    if(allowedOrigins.indexOf(origin) === -1){
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
-  },
-  credentials: true
-}));
-
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.use('/src/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -95,6 +112,9 @@ io.on('connection', (socket) => {
   });
 });
 
+// Serve static files from build folder
+app.use(express.static(path.join(__dirname, 'build')));
+
 // Global error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -105,18 +125,15 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found'
-  });
+// Catch-all route - serves React app
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
 // Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`CORS enabled for: ${allowedOrigins.join(", ")}`);
+  console.log(`CORS enabled for: ${FRONTEND_URL} and *.trycloudflare.com`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
