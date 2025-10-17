@@ -126,7 +126,7 @@ app.use((err, req, res, next) => {
 });
 
 // Catch-all route - serves React app
-app.get('*', (req, res) => {
+app.get('/*', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
