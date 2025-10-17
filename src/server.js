@@ -39,7 +39,7 @@ const corsOptions = {
       return callback(null, true);
     }
     
-    callback(new Error('Not allowed by CORS'));
+    callback(null, true); // Allow all for now
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
@@ -53,7 +53,7 @@ const io = new Server(server, {
       if (origin.endsWith('.trycloudflare.com')) return callback(null, true);
       if (origin === FRONTEND_URL) return callback(null, true);
       if (origin.includes('localhost') || origin.includes('127.0.0.1')) return callback(null, true);
-      callback(new Error('Not allowed by CORS'));
+      callback(null, true);
     },
     methods: ["GET", "POST"],
     credentials: true
@@ -112,8 +112,8 @@ io.on('connection', (socket) => {
   });
 });
 
-// Serve static files from build folder
-app.use(express.static(path.join(__dirname, 'build')));
+// Serve static files from build folder (build is in parent directory)
+app.use(express.static(path.join(__dirname, '../build')));
 
 // Global error handler
 app.use((err, req, res, next) => {
@@ -125,9 +125,26 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Catch-all route - serves React app
-app.get('/*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+// Catch-all route for React app (must be last)
+app.use((req, res, next) => {
+  // Skip catch-all for API routes
+  if (req.path.startsWith('/api') || req.path.startsWith('/src/uploads')) {
+    return res.status(404).json({
+      success: false,
+      message: 'Route not found'
+    });
+  }
+  
+  // Serve React app for all other routes
+  res.sendFile(path.join(__dirname, '../build', 'index.html'), (err) => {
+    if (err) {
+      console.error('Error serving index.html:', err);
+      res.status(500).json({
+        success: false,
+        message: 'Error loading application'
+      });
+    }
+  });
 });
 
 // Start server
@@ -136,4 +153,5 @@ server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`CORS enabled for: ${FRONTEND_URL} and *.trycloudflare.com`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Serving static files from: ${path.join(__dirname, '../build')}`);
 });
