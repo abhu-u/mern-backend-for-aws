@@ -15,7 +15,7 @@ app.use(cors({
       process.env.FRONTEND_URL,
       'http://localhost:3000',
       'http://localhost:5173',
-      'https://main.d1w22wqc58f8xv.amplifyapp.com'
+      'https://main.d3f39s5iljebpo.amplifyapp.com'
     ].filter(Boolean);
     
     // Allow requests with no origin (like mobile apps or Postman)
