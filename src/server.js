@@ -88,11 +88,12 @@ app.get('/api/health', (req, res) => {
 });
 
 // MongoDB connection
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/qrmenu";
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://uditanshubhatt_db_user:umd8M51rOT4qetrn@qrmenu.c8xezrr.mongodb.net/?retryWrites=true&w=majority&appName=qrmenu";
 mongoose
   .connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000,
   })
   .then(() => console.log("MongoDB connected to:", MONGODB_URI))
   .catch((err) => console.error("MongoDB connection error:", err));
