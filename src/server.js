@@ -16,7 +16,7 @@ const app = express();
 const server = http.createServer(app);
 
 // Get frontend URL from environment variable
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:8080';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://main.d3f39s5iljebpo.amplifyapp.com';
 
 // Dynamic CORS configuration
 const corsOptions = {
